@@ -1,0 +1,30 @@
+{
+    "name": "mheads/yii2-dbfiles",
+    "description": "Db file manager",
+    "type": "yii2-extension",
+	"keywords": ["yii2","extension","file manager"],
+    "require": {
+        "yiisoft/yii2": "~2.0.0"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Sergey Alekseenko",
+            "email": "sergei_alekseenk@list.ru",
+		  	"homepage": "https://machineheads.ru",
+		  	"role": "Developer"
+        }
+    ],
+    "minimum-stability": "stable",
+	"autoload": {
+		"psr-4": {
+			"mheads\\dbfiles\\": "src"
+		}
+	},
+	"repositories": [
+		{
+			"type": "composer",
+			"url": "https://asset-packagist.org"
+		}
+	]
+}
