@@ -59,6 +59,14 @@ if(!$image->hasErrors())
 }
 ```
 
+Получение файла:
+```php
+$file = Yii::$app->dbFileStorage->getFile(123);
+echo $file->id;
+echo $file->url;
+echo $file->path;
+```
+
 Удаление файла:
 ```php
 Yii::$app->dbFileStorage->deleteFile(123);
