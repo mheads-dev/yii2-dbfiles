@@ -55,7 +55,7 @@ class UploadedFile extends \yii\web\UploadedFile
 
 	public function __destruct()
 	{
-		if($file->isCreatedByPath)
+		if($this->isCreatedByPath)
 		{
 			@unlink($this->tempName);
 		}
