@@ -24,7 +24,7 @@ use yii\web\UploadedFile;
  * @property string $name
  * @property string $original_name
  * @property string $group_name
- * @property int $heigh
+ * @property int $height
  * @property int $width
  * @property string $file_size
  * @property string $content_type
@@ -49,6 +49,8 @@ class File extends \yii\db\ActiveRecord
 
 	/** @var array|string */
 	protected $validateExtensions;
+	/** @var bool */
+	protected $validateCheckExtensionByMimeType = true;
 	/** @var array|string */
 	protected $validateMimeTypes;
 	/** @var int */
@@ -70,14 +72,14 @@ class File extends \yii\db\ActiveRecord
 	public function rules()
 	{
 		$rules = [
-			[['heigh', 'width', 'file_size', 'created_at', 'updated_at'], 'integer'],
+			[['height', 'width', 'file_size', 'created_at', 'updated_at'], 'integer'],
 			[['subdir', 'name', 'original_name', 'content_type', 'description'], 'string', 'max' => 255],
 			[['group_name'], 'string', 'max' => 50],
 			[
 				'file',
 				'required',
 				'enableClientValidation' => false,
-				'when' => function ($model) {
+				'when'                   => function ($model) {
 					/* @var $model $this */
 					return $model->getIsNewRecord();
 				},
@@ -101,14 +103,18 @@ class File extends \yii\db\ActiveRecord
 		{
 			$rules['file']['maxSize'] = $this->validateMaxSize;
 		}
-		
+		if($this->validateCheckExtensionByMimeType !== NULL)
+		{
+			$rules['file']['checkExtensionByMimeType'] = $this->validateCheckExtensionByMimeType;
+		}
+
 		return $rules;
 	}
 
 	public function behaviors()
 	{
 		return [
-			TimestampBehavior::class
+			TimestampBehavior::class,
 		];
 	}
 
@@ -120,6 +126,7 @@ class File extends \yii\db\ActiveRecord
 		$this->file = $file;
 		$this->prepareFileProperties();
 	}
+
 	public function getFile()
 	{
 		return $this->file;
@@ -131,7 +138,10 @@ class File extends \yii\db\ActiveRecord
 	public function getPath()
 	{
 		$fileStorage = $this->getFileStorage();
-		if(!$this->subdir || !$this->name) return NULL;
+		if(!$this->subdir || !$this->name)
+		{
+			return NULL;
+		}
 
 		if(!$this->path)
 		{
@@ -143,7 +153,10 @@ class File extends \yii\db\ActiveRecord
 	public function getUrl()
 	{
 		$fileStorage = $this->getFileStorage();
-		if(!$this->subdir || !$this->name) return NULL;
+		if(!$this->subdir || !$this->name)
+		{
+			return NULL;
+		}
 
 		if(!$this->url)
 		{
@@ -159,6 +172,15 @@ class File extends \yii\db\ActiveRecord
 	{
 		$this->validateExtensions = $value;
 	}
+
+	/**
+	 * @param $value bool
+	 */
+	public function setValidateCheckExtensionByMimeType($value)
+	{
+		$this->validateCheckExtensionByMimeType = $value;
+	}
+
 	/**
 	 * @param $value array|string
 	 */
@@ -166,6 +188,7 @@ class File extends \yii\db\ActiveRecord
 	{
 		$this->validateMimeTypes = $value;
 	}
+
 	/**
 	 * @param $value int
 	 */
@@ -173,6 +196,7 @@ class File extends \yii\db\ActiveRecord
 	{
 		$this->validateMinSize = $value;
 	}
+
 	/**
 	 * @param $value int
 	 */
@@ -196,7 +220,9 @@ class File extends \yii\db\ActiveRecord
 			{
 				if(!$this->getIsNewRecord())
 				{
-					$oldFilePath = $fileStorage->getFileFullPath($this->getOldAttribute('subdir').'/'.$this->getOldAttribute('name'));
+					$oldFilePath = $fileStorage->getFileFullPath(
+						$this->getOldAttribute('subdir').'/'.$this->getOldAttribute('name')
+					);
 				}
 
 				$filePath = $this->getPath();
@@ -220,11 +246,17 @@ class File extends \yii\db\ActiveRecord
 		$isSaved = parent::save(false);
 		if($isSaved)
 		{
-			if($this->file && !empty($oldFilePath)) FileHelper::unlink($oldFilePath);
+			if($this->file && !empty($oldFilePath))
+			{
+				FileHelper::unlink($oldFilePath);
+			}
 		}
 		else
 		{
-			if($this->file && !empty($filePath)) FileHelper::unlink($filePath);
+			if($this->file && !empty($filePath))
+			{
+				FileHelper::unlink($filePath);
+			}
 		}
 		unset($this->file);
 
@@ -258,10 +290,10 @@ class File extends \yii\db\ActiveRecord
 			$imageInfo = getimagesize($this->file->tempName);
 			if($imageInfo)
 			{
-				list($width, $height) = $imageInfo;
+				[$width, $height] = $imageInfo;
 
 				$this->width = $width;
-				$this->heigh = $height;
+				$this->height = $height;
 			}
 
 			$this->file_size = $this->file->size;
@@ -287,7 +319,7 @@ class File extends \yii\db\ActiveRecord
 			'name'          => 'Name',
 			'original_name' => 'Original name',
 			'group_name'    => 'Group name',
-			'heigh'         => 'Heigh',
+			'height'        => 'Heigh',
 			'width'         => 'Width',
 			'file_size'     => 'File size',
 			'content_type'  => 'Content type',
@@ -300,12 +332,12 @@ class File extends \yii\db\ActiveRecord
 	public function fields()
 	{
 		return [
-			'url' => function(){
+			'url'       => function () {
 				return $this->getUrl();
 			},
 			'file_name' => 'original_name',
 			'file_size',
-			'heigh',
+			'height',
 			'width',
 			'description',
 		];
