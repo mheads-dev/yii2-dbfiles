@@ -20,6 +20,7 @@ use yii\web\UploadedFile;
  * This is the model class for table "{{%file}}".
  *
  * @property int $id
+ * @property int $is_private
  * @property string $subdir
  * @property string $name
  * @property string $original_name
@@ -72,7 +73,8 @@ class File extends \yii\db\ActiveRecord
 	public function rules()
 	{
 		$rules = [
-			[['height', 'width', 'file_size', 'created_at', 'updated_at'], 'integer'],
+			['is_private', 'default', 'value' => 0],
+			[['is_private', 'height', 'width', 'file_size', 'created_at', 'updated_at'], 'integer'],
 			[['subdir', 'name', 'original_name', 'content_type', 'description'], 'string', 'max' => 255],
 			[['group_name'], 'string', 'max' => 50],
 			[
@@ -145,13 +147,18 @@ class File extends \yii\db\ActiveRecord
 
 		if(!$this->path)
 		{
-			$this->path = $fileStorage->getFileFullPath($this->subdir.'/'.$this->name);
+			$this->path = $fileStorage->getFileFullPath($this->subdir.'/'.$this->name, (bool)$this->is_private);
 		}
 		return $this->path;
 	}
 
 	public function getUrl()
 	{
+		if($this->is_private)
+		{
+			return NULL;
+		}
+
 		$fileStorage = $this->getFileStorage();
 		if(!$this->subdir || !$this->name)
 		{
@@ -221,7 +228,8 @@ class File extends \yii\db\ActiveRecord
 				if(!$this->getIsNewRecord())
 				{
 					$oldFilePath = $fileStorage->getFileFullPath(
-						$this->getOldAttribute('subdir').'/'.$this->getOldAttribute('name')
+						$this->getOldAttribute('subdir').'/'.$this->getOldAttribute('name'),
+						(bool)$this->is_private
 					);
 				}
 
@@ -283,7 +291,7 @@ class File extends \yii\db\ActiveRecord
 
 			$this->group_name = strlen($this->group_name) > 0 ? $this->group_name:$fileStorage->defaultGroupDirName;
 			$this->name = $fileStorage->normalizeBaseFileName($this->file->baseName).'.'.$this->file->extension;
-			$this->subdir = $fileStorage->generateSubdir($this->name, $this->group_name);
+			$this->subdir = $fileStorage->generateSubdir($this->name, $this->group_name, (bool)$this->is_private);
 			$this->original_name = $this->file->baseName.'.'.$this->file->extension;
 			$this->content_type = FileHelper::getMimeType($this->file->tempName);
 

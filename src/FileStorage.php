@@ -13,14 +13,18 @@ namespace mheads\dbfiles;
 
 use Yii;
 use yii\base\Component;
+use yii\base\InvalidConfigException;
 use yii\helpers\FileHelper;
 use yii\helpers\Inflector;
 use yii\web\UploadedFile;
 
 class FileStorage extends Component
 {
-	/** @var string - базовый путь к папке для хранения файлов */
+	/** @var string - базовый путь к папке для хранения файлов в публичной папке, доступной из под WEB */
 	public $basePath = '@webroot/upload';
+
+	/** @var string - базовый путь к папке для хранения файлов в приватной папке, не доступной из под WEB */
+	public $basePrivatePath;
 
 	/** @var string - базовый url к файлу */
 	public $baseUrl = '@web/upload';
@@ -42,17 +46,26 @@ class FileStorage extends Component
 	public function init()
 	{
 		$this->basePath = rtrim($this->basePath, '/');
+		$this->basePrivatePath = rtrim($this->basePrivatePath, '/');
 		$this->baseUrl = rtrim($this->baseUrl, '/');
 		$this->defaultGroupDirName = trim($this->defaultGroupDirName, '/');
 	}
 
 	/**
 	 * @param $relativePath string
+	 * @param $isPrivate bool
 	 * @return string
 	 */
-	public function getFileFullPath($relativePath)
+	public function getFileFullPath($relativePath, $isPrivate = false)
 	{
-		return FileHelper::normalizePath(Yii::getAlias($this->basePath).'/'.ltrim($relativePath, '/'));
+		$basePath = !$isPrivate ? $this->basePath:$this->basePrivatePath;
+		if(!$basePath)
+		{
+			throw new InvalidConfigException(
+				__CLASS__."::".(!$isPrivate ? 'basePath':'basePrivatePath')." is not configured"
+			);
+		}
+		return FileHelper::normalizePath(Yii::getAlias($basePath).'/'.ltrim($relativePath, '/'));
 	}
 
 	/**
@@ -70,14 +83,24 @@ class FileStorage extends Component
 	/**
 	 * @param string $fileName
 	 * @param string $groupDirName
+	 * @param bool $isPrivate
 	 *
 	 * @return string
 	 */
-	public function generateSubdir($fileName, $groupDirName = NULL)
+	public function generateSubdir($fileName, $groupDirName = NULL, $isPrivate = false)
 	{
 		if(strlen($groupDirName) <= 0) $groupDirName = $this->defaultGroupDirName;
 		$groupDirName = trim($groupDirName, '/');
-		$basePath = Yii::getAlias($this->basePath);
+
+		$basePath = !$isPrivate ? $this->basePath:$this->basePrivatePath;
+		if(!$basePath)
+		{
+			throw new InvalidConfigException(
+				__CLASS__."::".(!$isPrivate ? 'basePath':'basePrivatePath')." is not configured"
+			);
+		}
+
+		$basePath = Yii::getAlias($basePath);
 
 		$i = 0;
 		$dirAdd = '';
@@ -145,6 +168,7 @@ class FileStorage extends Component
 
 		if(isset($params['description'])) $model->description = $params['description'];
 		if(isset($params['group_name'])) $model->group_name = $params['group_name'];
+		if(isset($params['is_private'])) $model->is_private = $params['is_private'];
 		if(isset($params['validateExtensions'])) $model->setValidateExtensions($params['validateExtensions']);
 		if(isset($params['validateMimeTypes'])) $model->setValidateMimeTypes($params['validateMimeTypes']);
 		if(isset($params['validateMinSize'])) $model->setValidateMinSize($params['validateMinSize']);
@@ -173,6 +197,28 @@ class FileStorage extends Component
 	{
 		$params['fileType'] = 'image';
 		return $this->saveFile($file, $params);
+	}
+
+	/**
+	 * @param $file UploadedFile
+	 * @param $params array - deleteFileId: int, fileType: string(image|file), description: string, group_name: string, validate...
+	 * @return File|ImageFile
+	 */
+	public function savePrivateFile(UploadedFile $file, $params = [])
+	{
+		$params['is_private'] = 1;
+		return $this->saveFile($file, $params);
+	}
+
+	/**
+	 * @param $file UploadedFile
+	 * @param $params array - deleteFileId: int, fileType: string(image|file), description: string, group_name: string, validate...
+	 * @return File|ImageFile
+	 */
+	public function savePrivateImageFile(UploadedFile $file, $params = [])
+	{
+		$params['is_private'] = 1;
+		return $this->saveImageFile($file, $params);
 	}
 
 	/**
