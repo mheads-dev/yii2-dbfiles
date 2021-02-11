@@ -277,7 +277,11 @@ class File extends \yii\db\ActiveRecord
 		$isDelete = parent::delete();
 		if($isDelete)
 		{
-			FileHelper::unlink($oldFilePath);
+			try
+			{
+				FileHelper::unlink($oldFilePath);
+			}
+			catch(\Exception $e){}
 		}
 
 		return $isDelete;
