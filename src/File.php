@@ -299,7 +299,7 @@ class File extends \yii\db\ActiveRecord
 			$this->original_name = $this->file->baseName.'.'.$this->file->extension;
 			$this->content_type = FileHelper::getMimeType($this->file->tempName);
 
-			$imageInfo = getimagesize($this->file->tempName);
+			$imageInfo = @getimagesize($this->file->tempName);
 			if($imageInfo)
 			{
 				[$width, $height] = $imageInfo;
