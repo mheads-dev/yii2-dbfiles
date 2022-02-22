@@ -110,6 +110,16 @@ class ImageCompressor
 		return $this;
 	}
 
+	public function get(?string $extension = NULL): string
+	{
+		if($extension === NULL || !isset(self::$formatToMimeType[$extension]))
+		{
+			$extension = $this->extension;
+		}
+
+		return $this->createTransformedImage()->get($extension, ['quality' => $this->quality]);
+	}
+
 	public function makeUploadedFile(bool $convertToJpeg = false): UploadedFile
 	{
 		$file = new UploadedFile();
@@ -144,7 +154,7 @@ class ImageCompressor
 		$image->save($path, ['format' => $extension, 'quality' => $this->quality]);
 	}
 
-	private function createTransformedImage(): ImageInterface
+	public function createTransformedImage(): ImageInterface
 	{
 		$imagine = \Yii::$container->get(ImagineInterface::class);
 		$image = $imagine->open($this->filePath);
