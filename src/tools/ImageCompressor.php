@@ -34,6 +34,7 @@ class ImageCompressor
 		'png'  => 'image/png',
 		'wbmp' => 'image/vnd.wap.wbmp',
 		'xbm'  => 'image/xbm',
+		'webp' => 'image/webp',
 	];
 
 	public function __construct(
