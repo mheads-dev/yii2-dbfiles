@@ -243,12 +243,18 @@ class File extends \yii\db\ActiveRecord
 				{
 					throw new \Exception();
 				}
+				// check saved file
+	            clearstatcache(true, $filePath);
+	            if (!is_file($filePath)) {
+					throw new \Exception();
+	            }
 			}
 			catch(\Exception $e)
 			{
 				$this->addError('file', 'failed to save file');
 				return false;
 			}
+
 		}
 
 		$isSaved = parent::save(false);
